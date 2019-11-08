@@ -1,0 +1,129 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.32.0.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: e5019370839a616c21776d727c1562562f57f6bac90a5e3681e57613c2e14297
+
+name:           copyright-header
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/srghma/copyright-header#readme>
+homepage:       https://github.com/srghma/copyright-header#readme
+bug-reports:    https://github.com/srghma/copyright-header/issues
+author:         Sergey Homa <srghma@gmail.com>
+maintainer:     Sergey Homa <srghma@gmail.com>
+license:        Apache-2.0
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    ChangeLog.md
+
+source-repository head
+  type: git
+  location: https://github.com/srghma/copyright-header
+
+library
+  exposed-modules:
+      CopyrightHeader
+  other-modules:
+      Copyright
+      Paths_copyright_header
+  hs-source-dirs:
+      src
+  default-extensions: BangPatterns ConstraintKinds DataKinds DefaultSignatures DeriveDataTypeable DeriveGeneric DeriveLift DuplicateRecordFields FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs LambdaCase MultiParamTypeClasses MultiWayIf NamedFieldPuns NoImplicitPrelude OverloadedStrings PackageImports QuasiQuotes RecordWildCards ScopedTypeVariables StandaloneDeriving TemplateHaskell TupleSections TypeApplications TypeFamilies ViewPatterns
+  ghc-options: -Weverything -Wno-missing-exported-signatures -Wno-missing-import-lists -Wno-missed-specialisations -Wno-all-missed-specialisations -Wno-unsafe -Wno-safe -Wno-missing-local-signatures -Wno-monomorphism-restriction -Wno-missing-export-lists
+  build-depends:
+      aeson
+    , base
+    , bytestring
+    , directory
+    , exceptions
+    , filepath
+    , generic-arbitrary
+    , generic-lens
+    , lens
+    , mtl
+    , neat-interpolation
+    , prettyprinter
+    , protolude
+    , safe-exceptions
+    , tabular
+    , template-haskell
+    , text
+    , transformers
+    , turtle
+  default-language: Haskell2010
+
+executable copyright-header
+  main-is: Main.hs
+  other-modules:
+      Copyright
+      Paths_copyright_header
+  hs-source-dirs:
+      cli
+      src
+  default-extensions: BangPatterns ConstraintKinds DataKinds DefaultSignatures DeriveDataTypeable DeriveGeneric DeriveLift DuplicateRecordFields FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs LambdaCase MultiParamTypeClasses MultiWayIf NamedFieldPuns NoImplicitPrelude OverloadedStrings PackageImports QuasiQuotes RecordWildCards ScopedTypeVariables StandaloneDeriving TemplateHaskell TupleSections TypeApplications TypeFamilies ViewPatterns
+  ghc-options: -Weverything -Wno-missing-exported-signatures -Wno-missing-import-lists -Wno-missed-specialisations -Wno-all-missed-specialisations -Wno-unsafe -Wno-safe -Wno-missing-local-signatures -Wno-monomorphism-restriction -Wno-missing-export-lists
+  build-depends:
+      aeson
+    , base
+    , bytestring
+    , directory
+    , exceptions
+    , filepath
+    , generic-arbitrary
+    , generic-lens
+    , lens
+    , mtl
+    , neat-interpolation
+    , prettyprinter
+    , protolude
+    , safe-exceptions
+    , tabular
+    , template-haskell
+    , text
+    , transformers
+    , turtle
+  default-language: Haskell2010
+
+test-suite spec
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Copyright
+      Main
+      Paths_copyright_header
+  hs-source-dirs:
+      test
+      src
+      cli
+  default-extensions: BangPatterns ConstraintKinds DataKinds DefaultSignatures DeriveDataTypeable DeriveGeneric DeriveLift DuplicateRecordFields FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs LambdaCase MultiParamTypeClasses MultiWayIf NamedFieldPuns NoImplicitPrelude OverloadedStrings PackageImports QuasiQuotes RecordWildCards ScopedTypeVariables StandaloneDeriving TemplateHaskell TupleSections TypeApplications TypeFamilies ViewPatterns
+  ghc-options: -Weverything -Wno-missing-exported-signatures -Wno-missing-import-lists -Wno-missed-specialisations -Wno-all-missed-specialisations -Wno-unsafe -Wno-safe -Wno-missing-local-signatures -Wno-monomorphism-restriction -Wno-missing-export-lists
+  build-tool-depends:
+      hspec-discover:hspec-discover
+  build-depends:
+      QuickCheck
+    , aeson
+    , base
+    , bytestring
+    , directory
+    , exceptions
+    , filepath
+    , generic-arbitrary
+    , generic-lens
+    , hspec ==2.*
+    , lens
+    , mtl
+    , neat-interpolation
+    , prettyprinter
+    , protolude
+    , quickcheck-instances
+    , safe-exceptions
+    , tabular
+    , template-haskell
+    , text
+    , transformers
+    , turtle
+  default-language: Haskell2010

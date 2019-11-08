@@ -1,0 +1,107 @@
+name:    copyright-header
+version: 0.1.0.0
+github:  "srghma/copyright-header"
+license: Apache-2.0
+author:  Sergey Homa <srghma@gmail.com>
+
+extra-source-files:
+  - README.md
+  - ChangeLog.md
+
+description: Please see the README on GitHub at <https://github.com/srghma/copyright-header#readme>
+
+# FROM https://medium.com/mercury-bank/enable-all-the-warnings-a0517bc081c3
+ghc-options:
+  # For details on warnings: https://downloads.haskell.org/~ghc/master/users-guide/using-warnings.html
+  # This list taken from https://medium.com/mercury-bank/enable-all-the-warnings-a0517bc081c3
+  # Enable all warnings with -Weverything, then disable the ones we don’t care about
+  - -Weverything
+  - -Wno-missing-exported-signatures # missing-exported-signatures turns off the more strict -Wmissing-signatures. See https://ghc.haskell.org/trac/ghc/ticket/14794#ticket
+  - -Wno-missing-import-lists # Requires explicit imports of _every_ function (e.g. ‘$’); too strict
+  - -Wno-missed-specialisations # When GHC can’t specialize a polymorphic function. No big deal and requires fixing underlying libraries to solve.
+  - -Wno-all-missed-specialisations # See missed-specialisations
+  - -Wno-unsafe # Don’t use Safe Haskell warnings
+  - -Wno-safe # Don’t use Safe Haskell warnings
+  - -Wno-missing-local-signatures # Warning for polymorphic local bindings; nothing wrong with those.
+  - -Wno-monomorphism-restriction # Don’t warn if the monomorphism restriction is used
+
+  # TODO: fix these
+  - -Wno-missing-export-lists
+
+default-extensions:
+  - BangPatterns
+  - ConstraintKinds
+  - DataKinds
+  - DefaultSignatures
+  - DeriveDataTypeable
+  - DeriveGeneric
+  - DeriveLift
+  - DuplicateRecordFields
+  - FlexibleContexts
+  - FlexibleInstances
+  - FunctionalDependencies
+  - GADTs
+  - GeneralizedNewtypeDeriving
+  - InstanceSigs
+  - LambdaCase
+  - MultiParamTypeClasses
+  - MultiWayIf
+  - NamedFieldPuns
+  - NoImplicitPrelude
+  - OverloadedStrings
+  - PackageImports
+  - QuasiQuotes
+  - RecordWildCards
+  - ScopedTypeVariables
+  - StandaloneDeriving
+  - TemplateHaskell
+  - TupleSections
+  - TypeApplications
+  - TypeFamilies
+  - ViewPatterns
+
+dependencies:
+  - base
+  - protolude
+  - text
+  - safe-exceptions # TODO: use http://hackage.haskell.org/package/unliftio ?
+  - exceptions
+  - mtl
+  - turtle
+  - filepath # because system-filepath (that turtle uses) is deprecated
+  - neat-interpolation # multiline text
+  - prettyprinter
+  - directory
+  - aeson
+  - lens
+  - generic-lens
+  - bytestring
+  - tabular
+  - generic-arbitrary
+  # - pipes # pipes is better than conduit (https://www.twanvl.nl/blog/haskell/conduits-vs-pipes)
+  - template-haskell
+  - transformers
+
+library:
+  source-dirs: src
+  exposed-modules:
+    - CopyrightHeader
+
+executable:
+  main: Main.hs
+  source-dirs:
+    - cli
+    - src
+
+tests:
+  spec:
+    main: Spec.hs
+    source-dirs:
+      - test
+      - src
+      - cli
+    dependencies:
+      - hspec == 2.*
+      - QuickCheck
+      - quickcheck-instances
+    build-tools: hspec-discover
