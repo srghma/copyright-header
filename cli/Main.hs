@@ -97,9 +97,6 @@ main = do
         guard $ file /= ""
         guard $ any (file ~~) includePatterns
         guard $ all (file /~) excludePatterns
-        -- traceShowM file
-        -- let comment = fileComment file
-        -- guard $ comment /= Comment [] []
         return file
 
   -- putStrLn (show gitTrackedFiles_ :: String)
@@ -119,8 +116,10 @@ main = do
       Right inputs ->
         withFile filePath ReadWriteMode (\handle -> do
           text <- Text.hGetContents handle
+
           let template = templateFn (NonEmpty.toList inputs)
 
+          -- TODO: http://hackage.haskell.org/package/parsec-3.1.14.0/docs/Text-Parsec-Char.html#v:alphaNum
           let firstFiveWordsFromText :: [Text] = undefined
           let firstFiveWordsFromTemplate :: [Text] = undefined
 
@@ -131,11 +130,10 @@ main = do
 
           let newText = template_ <> "\n\n" <> textWithoutExistingTemplate
 
-          traceShowM filePath
           putStrLn (toS newText :: String)
           -- Text.hPutStr handle newText
           return ()
-          )
+        )
     )
 
   -- let templateCompiled = template dhallConfig [Input "asdf" "2018-2019", Input "qweqwe" "2013"]

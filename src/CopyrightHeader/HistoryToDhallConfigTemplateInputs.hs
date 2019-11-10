@@ -29,8 +29,6 @@ historyToDhallConfigTemplateInputs history = do
         Data.List.filter (/= "") &
         fmap (Text.splitOn ";")
 
-  traceShowM history_
-
   case nonEmpty history_ of
     Nothing -> throwError $ "Empty history " <> show history
     Just history__ ->
@@ -61,7 +59,6 @@ historyToDhallConfigTemplateInputs history = do
       timestamp :: Int <- first toS $ Text.Read.readEither (toS fst)
       let name = snd
       let day :: Day = unixEpochInSecondsToDay timestamp
-      traceShowM day
       let (year, _month, _day) = toGregorian day
       return $ (name, year)
     extractNameAndYear other = throwError $ "Should return 2 elements, but received " <> show other
