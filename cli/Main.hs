@@ -6,207 +6,144 @@ import           Protolude                                                      
     , try
     )
 
-import           Codebreaker.Marker.MarkerException
-import           Codebreaker.Marker.Type
-import           Codebreaker.Game
-import           Codebreaker.Marker
-import           Codebreaker.Rules
-import           Codebreaker.StatsTable
-import           Codebreaker.Utils
-
-import           Cli.AbstractUtils
-import           Cli.App
-import           Cli.Game
-import           Cli.GameLoop
-import           Cli.Monads
-import           Cli.Types
-
-import qualified System.Console.Haskeline                                               as Haskeline
-
--- import           Turtle
 import qualified Data.Aeson                                                              as Aeson
 import qualified Data.ByteString.Lazy.Char8                                              as BS
 import qualified Data.List                                                               as List
+import qualified Data.List.NonEmpty                                                               as NonEmpty
 import           Data.String
-import qualified Data.Text                                                               ()
+import qualified Data.Text as Text
+import qualified Data.Text.IO as Text
 import           "prettyprinter" Data.Text.Prettyprint.Doc
     ( (<+>)
     )
 import qualified "prettyprinter" Data.Text.Prettyprint.Doc                               as PP
-import qualified "prettyprinter-ansi-terminal" Data.Text.Prettyprint.Doc.Render.Terminal as PP
 import qualified System.Directory                                                        as Directory
 import qualified System.FilePath                                                         as FilePath
-import qualified Control.Monad.Random as Random
 import qualified Data.Generics.Product as GLens
 import qualified Control.Lens as Lens
+import Options.Applicative
+import Data.Semigroup ((<>))
+import qualified Dhall
+import qualified Turtle
+import Dhall (FromDhall, ToDhall, Natural)
+import System.FilePath.GlobPattern
 
-mkSearchFunc :: [String] -> String -> [Haskeline.Completion]
-mkSearchFunc wordList str =
-  map Haskeline.simpleCompletion $ filter (str `isPrefixOf`) wordList
+import CopyrightHeader.LanguageTypes
+import CopyrightHeader.Language
+import CopyrightHeader.Types
+import CopyrightHeader.HistoryToDhallConfigTemplateInputs
 
-mkSettings :: MonadIO m => [String] -> Haskeline.Settings m
-mkSettings wordList = Haskeline.setComplete myCompletitionFunc Haskeline.defaultSettings
- where
-  myCompletitionFunc =
-    Haskeline.completeWord Nothing " \t" $ return . mkSearchFunc wordList
+data ConfigOptions = ConfigOptions
+  { configFilePath :: FilePath.FilePath
+  , rootDirectoryPath :: FilePath.FilePath
+  }
+  deriving stock (Show)
 
-getAppEnv :: MonadIO m => m AppEnv
-getAppEnv = do
-  statsDir <- liftIO $ Directory.getXdgDirectory Directory.XdgConfig "codebreaker"
-  let statsFilePath = statsDir FilePath.</> "codebreaker.state"
-  return $ AppEnv { statsFilePath = statsFilePath
-                  , secretLength = 4
-                  }
+configOptionsParser :: Parser ConfigOptions
+configOptionsParser = ConfigOptions
+      <$> strOption
+          (  long "config"
+          <> short 'c'
+          <> metavar "FILENAME"
+          <> showDefault
+          <> value "./.copyright-header.dhall"
+          <> help "Yaml config file" )
+      <*> strOption
+          (  long "root"
+          <> short 'r'
+          <> metavar "DIR"
+          <> showDefault
+          <> value "./."
+          <> help "Root directory" )
 
-----------
+opts :: ParserInfo ConfigOptions
+opts = info (configOptionsParser <**> helper)
+  ( fullDesc
+ <> progDesc "Add copyright header"
+ <> header "copyright-header" )
 
-appendStatsToFile :: (MonadIO m, MonadPrint m) => FilePath.FilePath -> CompletedGame -> m ()
-appendStatsToFile path completedGame = do
-  liftIO $ Directory.createDirectoryIfMissing True (FilePath.takeDirectory path)
+fileComment :: FilePath.FilePath -> Comment
+fileComment = getCommentStyle . getLangFromExt . FilePath.takeExtension
 
-  exists <- liftIO $ Directory.doesFileExist path
-
-  if exists
-    then do
-      maybeParsedStats <- liftIO $ Aeson.decodeFileStrict path
-      case maybeParsedStats of
-        Just parsedStats -> do
-          liftIO $ BS.writeFile path (Aeson.encode (completedGame : parsedStats))
-          return ()
-        Nothing -> do
-          printLine "Invalid stats file, overriding"
-          liftIO $ BS.writeFile path (Aeson.encode ([completedGame]))
-          return ()
-    else do
-      printLine "Stats file doest yet exists - creating"
-      liftIO $ BS.writeFile path (Aeson.encode ([completedGame]))
-      return ()
-
-generateSecret :: Random.MonadRandom m => Int -> m (NonEmpty Int)
-generateSecret len = do
-  x <- Random.getRandomR fromTo
-  xs <- take (len - 1) <$> Random.getRandomRs fromTo
-  return (x :| xs)
-  where
-  fromTo = (1, 4)
-
----------------------------------------------------
-
-processGame :: Difficulty -> Text -> Int -> IO GameResult
-processGame difficultyVal username secretLength = do
-  secret <- generateSecret secretLength
-  putText ("Secret is " <> showT secret)
-  putText "Enter guess (4 numbers) or 'hint' or 'exit' (type tab to see all available commands)"
-  let gameEnv = GameEnv
-        { secret       = secret
-        , username     = username
-        , difficulty   = difficultyVal
-        }
-  let gameState = GameState
-        { attemptsUsed = 0
-        , secretIndexesAlreadyShownAsHint = []
-        }
-
-  interpret gameEnv gameState gameLoop
- where
-   interpret :: GameEnv -> GameState -> Game GameResult -> IO GameResult
-   interpret gameEnv gameState computation = do
-     -- (gameResult, _outGameState) <- runStateT (runReaderT (Haskeline.runInputT (mkSettings wordList) computation) gameEnv) gameState
-     (gameResult, _outGameState) <- runStateT (runReaderT (computation & Haskeline.runInputT (mkSettings wordList)) gameEnv) gameState
-     return gameResult
-
-   wordList :: IsString s => [s]
-   wordList = ["hint", "exit"]
-
-
--- TODO: lenses inside MonadState https://stackoverflow.com/questions/39184607/when-should-i-use-monadstate-lens-combinators
--- TODO: sync with state file asyncly
+-- TODO: http://hackage.haskell.org/package/pipes-async-0.1.3/docs/Pipes-Async.html
 main :: IO ()
 main = do
-  appEnv <- getAppEnv
-  interpret appEnv loop
-  -- _ $ Haskeline.runInputT (mkSettings wordList) loop
- where
-   interpret :: AppEnv -> App () -> IO ()
-   interpret appEnv computation = runReaderT (Haskeline.runInputT (mkSettings wordList) computation) appEnv
+  (config :: ConfigOptions) <- execParser opts
 
-   wordList :: IsString s => [s]
-   wordList = ["start", "rules", "stats", "exit"]
+  let configFilePath_ = configFilePath config
+  configFilePathAbsolute <- Directory.makeAbsolute configFilePath_
+  configFilePathExists <- Directory.doesFileExist configFilePathAbsolute
+  unless configFilePathExists (die $ "File " <> toS configFilePathAbsolute <> " does not exists")
 
-   loopGameProcessor :: (MonadReader AppEnv m, MonadIO m, MonadPrint m, MonadGetInputLine m) => Text -> m ()
-   loopGameProcessor username = do
-     difficulty <- askDifficutly
-     printLine ("Difficulty is " <> showT difficulty)
-     printLine "Game is started."
-     secretLength' <- reader $ GLens.getField @"secretLength"
-     result <- liftIO $ processGame difficulty username secretLength' -- TODO: remove MonadIO, refactor
-     case result of
-       Exit -> return ()
-       Failure -> tryAgain
-       Success completedGame -> do
-         statsFilePathVal <- reader statsFilePath
-         appendStatsToFile statsFilePathVal completedGame
-         tryAgain
-      where
-        tryAgain = do
-          printLine "Try again?"
-          yn <- askYesNo
-          if yn
-            then loopGameProcessor username
-            else do
-              printLine "Bye"
-              return ()
+  let rootDirectoryPath_ = rootDirectoryPath config
+  rootDirectoryPathAbsolute <- Directory.makeAbsolute rootDirectoryPath_
+  rootDirectoryPathExists <- Directory.doesDirectoryExist rootDirectoryPathAbsolute
+  unless rootDirectoryPathExists (die $ "Directory " <> toS rootDirectoryPathAbsolute <> " does not exists")
 
+  -- TODO: may fail, NonEmpty.fromList Raises an error if given an empty list
+  (gitTrackedFiles :: [FilePath.FilePath]) <- fmap (fmap toS . Text.splitOn "\n") . Turtle.strict $ Turtle.inproc "git" ["ls-files"] empty
 
-   -- TODO: remove MonadIO from loop
-   loop :: (MonadReader AppEnv m, MonadIO m, MonadPrint m, MonadGetInputLine m) => m ()
-   loop = do
-     minput <- getInputLine "% "
-     case minput of
-       Just "exit"  -> return ()
-       Just "start" -> do
-         username <- askUsername
-         printLine ("Username is " <> username)
-         loopGameProcessor username
+  dhallConfig :: DhallConfig <- Dhall.input Dhall.auto (toS configFilePathAbsolute)
+  let templateFn = template dhallConfig
+  let excludePatterns :: [GlobPattern] = exclude dhallConfig
+  let includePatterns :: [GlobPattern] = include dhallConfig
 
-       Just "rules" -> do
-         liftIO $ PP.putDoc
-           (   rules
-           <>  PP.hardline
-           <>  "Possible commands:"
-           <+> PP.hsep (PP.punctuate "," wordList)
-           <>  PP.hardline
-           )
-         loop
-       Just "stats" -> do
-         statsFilePathVal <- reader statsFilePath
-         exists <- liftIO $ Directory.doesFileExist statsFilePathVal
+  -- putStrLn (show excludePatterns :: String)
 
-         if exists
-           then do
-             maybeParsedStats <- liftIO $ Aeson.decodeFileStrict statsFilePathVal
-             maybe
-               (printLine "Invalid stats file")
-               (\stats -> if null stats
-                 then printLine "Stats are empty"
-                 else liftIO . putStr $ statsTable stats
-               )
-               maybeParsedStats
-             loop
-           else do
-             printLine "Stats is empty"
-             loop
-         loop
-       _ -> do
-         liftIO
-           . PP.putDoc
-           . mconcat
-           . List.intersperse PP.hardline
-           $ [ PP.annotate
-               (PP.color PP.Red)
-               "You have passed unexpected command. Please choose one from listed commands"
-             , "Possible commands:" <+> PP.fillSep (PP.punctuate "," wordList)
-             , PP.hardline
-             ]
-         loop
+  -- putStrLn (show gitTrackedFiles :: String)
 
+  let gitTrackedFiles_ :: [FilePath.FilePath] = do
+        file <- gitTrackedFiles
+        guard $ file /= ""
+        guard $ any (file ~~) includePatterns
+        guard $ all (file /~) excludePatterns
+        -- traceShowM file
+        -- let comment = fileComment file
+        -- guard $ comment /= Comment [] []
+        return file
+
+  -- putStrLn (show gitTrackedFiles_ :: String)
+
+  let gitTrackedFilePathsWithComment :: [(FilePath.FilePath, Comment)] = fmap (\f -> (f, fileComment f)) gitTrackedFiles_
+
+  let unknownFilePaths :: [FilePath.FilePath] = fst <$> List.filter ((== Comment [] []) . snd) gitTrackedFilePathsWithComment
+
+  when (unknownFilePaths /= []) (Turtle.die $ "Unknown file extensions " <> show unknownFilePaths)
+
+  -- TODO: https://hackage.haskell.org/package/pipes-text-0.0.2.5/docs/Pipes-Text-IO.html
+  forM_ gitTrackedFilePathsWithComment (\(filePath, comment) -> do
+    history :: Text <- Turtle.strict $ Turtle.inproc "git" ["log", "--encoding=utf-8", "--full-history", "--reverse", "--format=format:%at;%an", toS filePath] empty
+
+    case historyToDhallConfigTemplateInputs history of
+      Left errorMessage -> putStrLn $ "Error for " <> filePath <> ": " <> show errorMessage
+      Right inputs ->
+        withFile filePath ReadWriteMode (\handle -> do
+          text <- Text.hGetContents handle
+          let template = templateFn (NonEmpty.toList inputs)
+
+          let firstFiveWordsFromText :: [Text] = undefined
+          let firstFiveWordsFromTemplate :: [Text] = undefined
+
+          let textAlreadyContainsCopyright = firstFiveWordsFromText == firstFiveWordsFromTemplate
+          let textWithoutExistingTemplate = if textAlreadyContainsCopyright then removeFirstParagraph text else text
+
+          let template_ = wrapInComment comment . wrapLastLine $ template
+
+          let newText = template_ <> "\n\n" <> textWithoutExistingTemplate
+
+          traceShowM filePath
+          putStrLn (toS newText :: String)
+          -- Text.hPutStr handle newText
+          return ()
+          )
+    )
+
+  -- let templateCompiled = template dhallConfig [Input "asdf" "2018-2019", Input "qweqwe" "2013"]
+
+  -- putStrLn (toS templateCompiled :: String)
+  return ()
+  where
+    wrapInComment = undefined
+    wrapLastLine = undefined
+    splitFirstParagraph = undefined
+    removeFirstParagraph = undefined

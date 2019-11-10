@@ -21,10 +21,10 @@ resolver: lts-14.13
 # system-ghc: true
 # install-ghc: false
 
-# nix:
-#   enable: true
-#   path: [nixpkgs=./nix/nixpkgs/default.nix]
-#   shell-file: shell.nix
+nix:
+  enable: true
+  # path: [nixpkgs=./nix/nixpkgs/default.nix]
+  shell-file: stack-shell.nix
 
 # User packages to be built.
 # Various formats can be used as shown in the example below.
@@ -44,7 +44,8 @@ packages:
 # Dependency packages to be pulled from upstream that are not in the resolver
 # using the same syntax as the packages field.
 # (e.g., acme-missiles-0.3)
-extra-deps: []
+extra-deps:
+  - dhall-1.27.0@sha256:b522d6b534949e65771ed0179afc1488e4de2b185af5ed38e4806a6720db51bf,30519
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

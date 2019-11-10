@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: e5019370839a616c21776d727c1562562f57f6bac90a5e3681e57613c2e14297
+-- hash: 73a6e971aba80e16ebc5c1e80376ffa97d3839e65c247c93dfd0bd9ada1ce396
 
 name:           copyright-header
 version:        0.1.0.0
@@ -28,30 +28,38 @@ library
   exposed-modules:
       CopyrightHeader
   other-modules:
-      Copyright
+      CopyrightHeader.HistoryToDhallConfigTemplateInputs
+      CopyrightHeader.Language
+      CopyrightHeader.LanguageTypes
+      CopyrightHeader.Types
       Paths_copyright_header
   hs-source-dirs:
       src
-  default-extensions: BangPatterns ConstraintKinds DataKinds DefaultSignatures DeriveDataTypeable DeriveGeneric DeriveLift DuplicateRecordFields FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs LambdaCase MultiParamTypeClasses MultiWayIf NamedFieldPuns NoImplicitPrelude OverloadedStrings PackageImports QuasiQuotes RecordWildCards ScopedTypeVariables StandaloneDeriving TemplateHaskell TupleSections TypeApplications TypeFamilies ViewPatterns
+  default-extensions: BangPatterns ConstraintKinds DataKinds DefaultSignatures DeriveDataTypeable DeriveGeneric DeriveLift DuplicateRecordFields FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs LambdaCase MultiParamTypeClasses MultiWayIf NamedFieldPuns NoImplicitPrelude OverloadedStrings PackageImports QuasiQuotes RecordWildCards ScopedTypeVariables StandaloneDeriving TemplateHaskell TupleSections TypeApplications TypeFamilies ViewPatterns DerivingStrategies
   ghc-options: -Weverything -Wno-missing-exported-signatures -Wno-missing-import-lists -Wno-missed-specialisations -Wno-all-missed-specialisations -Wno-unsafe -Wno-safe -Wno-missing-local-signatures -Wno-monomorphism-restriction -Wno-missing-export-lists
   build-depends:
       aeson
     , base
     , bytestring
+    , dhall >=1.27
     , directory
     , exceptions
+    , filemanip
     , filepath
     , generic-arbitrary
     , generic-lens
     , lens
     , mtl
     , neat-interpolation
+    , optparse-applicative
     , prettyprinter
     , protolude
     , safe-exceptions
+    , string-qq
     , tabular
     , template-haskell
     , text
+    , time
     , transformers
     , turtle
   default-language: Haskell2010
@@ -59,31 +67,40 @@ library
 executable copyright-header
   main-is: Main.hs
   other-modules:
-      Copyright
+      CopyrightHeader
+      CopyrightHeader.HistoryToDhallConfigTemplateInputs
+      CopyrightHeader.Language
+      CopyrightHeader.LanguageTypes
+      CopyrightHeader.Types
       Paths_copyright_header
   hs-source-dirs:
       cli
       src
-  default-extensions: BangPatterns ConstraintKinds DataKinds DefaultSignatures DeriveDataTypeable DeriveGeneric DeriveLift DuplicateRecordFields FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs LambdaCase MultiParamTypeClasses MultiWayIf NamedFieldPuns NoImplicitPrelude OverloadedStrings PackageImports QuasiQuotes RecordWildCards ScopedTypeVariables StandaloneDeriving TemplateHaskell TupleSections TypeApplications TypeFamilies ViewPatterns
+  default-extensions: BangPatterns ConstraintKinds DataKinds DefaultSignatures DeriveDataTypeable DeriveGeneric DeriveLift DuplicateRecordFields FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs LambdaCase MultiParamTypeClasses MultiWayIf NamedFieldPuns NoImplicitPrelude OverloadedStrings PackageImports QuasiQuotes RecordWildCards ScopedTypeVariables StandaloneDeriving TemplateHaskell TupleSections TypeApplications TypeFamilies ViewPatterns DerivingStrategies
   ghc-options: -Weverything -Wno-missing-exported-signatures -Wno-missing-import-lists -Wno-missed-specialisations -Wno-all-missed-specialisations -Wno-unsafe -Wno-safe -Wno-missing-local-signatures -Wno-monomorphism-restriction -Wno-missing-export-lists
   build-depends:
       aeson
     , base
     , bytestring
+    , dhall >=1.27
     , directory
     , exceptions
+    , filemanip
     , filepath
     , generic-arbitrary
     , generic-lens
     , lens
     , mtl
     , neat-interpolation
+    , optparse-applicative
     , prettyprinter
     , protolude
     , safe-exceptions
+    , string-qq
     , tabular
     , template-haskell
     , text
+    , time
     , transformers
     , turtle
   default-language: Haskell2010
@@ -92,14 +109,19 @@ test-suite spec
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      Copyright
+      HistoryToInputsSpec
+      CopyrightHeader
+      CopyrightHeader.HistoryToDhallConfigTemplateInputs
+      CopyrightHeader.Language
+      CopyrightHeader.LanguageTypes
+      CopyrightHeader.Types
       Main
       Paths_copyright_header
   hs-source-dirs:
       test
       src
       cli
-  default-extensions: BangPatterns ConstraintKinds DataKinds DefaultSignatures DeriveDataTypeable DeriveGeneric DeriveLift DuplicateRecordFields FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs LambdaCase MultiParamTypeClasses MultiWayIf NamedFieldPuns NoImplicitPrelude OverloadedStrings PackageImports QuasiQuotes RecordWildCards ScopedTypeVariables StandaloneDeriving TemplateHaskell TupleSections TypeApplications TypeFamilies ViewPatterns
+  default-extensions: BangPatterns ConstraintKinds DataKinds DefaultSignatures DeriveDataTypeable DeriveGeneric DeriveLift DuplicateRecordFields FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs LambdaCase MultiParamTypeClasses MultiWayIf NamedFieldPuns NoImplicitPrelude OverloadedStrings PackageImports QuasiQuotes RecordWildCards ScopedTypeVariables StandaloneDeriving TemplateHaskell TupleSections TypeApplications TypeFamilies ViewPatterns DerivingStrategies
   ghc-options: -Weverything -Wno-missing-exported-signatures -Wno-missing-import-lists -Wno-missed-specialisations -Wno-all-missed-specialisations -Wno-unsafe -Wno-safe -Wno-missing-local-signatures -Wno-monomorphism-restriction -Wno-missing-export-lists
   build-tool-depends:
       hspec-discover:hspec-discover
@@ -108,8 +130,10 @@ test-suite spec
     , aeson
     , base
     , bytestring
+    , dhall >=1.27
     , directory
     , exceptions
+    , filemanip
     , filepath
     , generic-arbitrary
     , generic-lens
@@ -117,13 +141,16 @@ test-suite spec
     , lens
     , mtl
     , neat-interpolation
+    , optparse-applicative
     , prettyprinter
     , protolude
     , quickcheck-instances
     , safe-exceptions
+    , string-qq
     , tabular
     , template-haskell
     , text
+    , time
     , transformers
     , turtle
   default-language: Haskell2010

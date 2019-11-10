@@ -59,6 +59,7 @@ default-extensions:
   - TypeApplications
   - TypeFamilies
   - ViewPatterns
+  - DerivingStrategies
 
 dependencies:
   - base
@@ -81,6 +82,11 @@ dependencies:
   # - pipes # pipes is better than conduit (https://www.twanvl.nl/blog/haskell/conduits-vs-pipes)
   - template-haskell
   - transformers
+  - optparse-applicative
+  - dhall >= 1.27
+  - filemanip
+  - string-qq
+  - time
 
 library:
   source-dirs: src
