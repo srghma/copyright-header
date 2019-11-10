@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 73a6e971aba80e16ebc5c1e80376ffa97d3839e65c247c93dfd0bd9ada1ce396
+-- hash: b0401809979e53041780559d67e78cae59465955f59ba221741c993f14d52c91
 
 name:           copyright-header
 version:        0.1.0.0
@@ -41,6 +41,7 @@ library
       aeson
     , base
     , bytestring
+    , containers
     , dhall >=1.27
     , directory
     , exceptions
@@ -82,6 +83,7 @@ executable copyright-header
       aeson
     , base
     , bytestring
+    , containers
     , dhall >=1.27
     , directory
     , exceptions
@@ -130,6 +132,7 @@ test-suite spec
     , aeson
     , base
     , bytestring
+    , containers
     , dhall >=1.27
     , directory
     , exceptions

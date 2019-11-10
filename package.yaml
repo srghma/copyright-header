@@ -64,6 +64,7 @@ default-extensions:
 dependencies:
   - base
   - protolude
+  - containers
   - text
   - safe-exceptions # TODO: use http://hackage.haskell.org/package/unliftio ?
   - exceptions

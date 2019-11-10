@@ -26,27 +26,27 @@ spec = do
           , (DhallConfigTemplateInput "srghma" "2018")
           ]
     historyToDhallConfigTemplateInputs gitLogOutput `shouldBe` Right expected
-  -- it "2" $ do
-  --   let gitLogOutput = [s|
--- 1406873814;User1 user
--- 1406873815;User1 user
--- 1537187208;srghma
--- |]
-  --   let expected =
-  --         [
-  --           (DhallConfigTemplateInput "User1 user" "2014")
-  --           (DhallConfigTemplateInput "srghma" "2018")
-  --         ]
-  --   historyToDhallConfigTemplateInputs gitLogOutput `shouldBe` Right expected
-  -- it "3" $ do
-  --   let gitLogOutput = [s|
--- 1406873814;User1 user
--- 1537187208;srghma
--- 1573325887;srghma
--- |]
-  --   let expected =
-  --         [
-  --           (DhallConfigTemplateInput "User1 user" "2014")
-  --           (DhallConfigTemplateInput "srghma" "2018-2019")
-  --         ]
-  --   historyToDhallConfigTemplateInputs gitLogOutput `shouldBe` Right expected
+  it "2" $ do
+    let gitLogOutput = [s|
+1406873814;User1 user
+1406873815;User1 user
+1537187208;srghma
+|]
+    let expected :: NonEmpty DhallConfigTemplateInput =
+          [
+            (DhallConfigTemplateInput "User1 user" "2014")
+          , (DhallConfigTemplateInput "srghma" "2018")
+          ]
+    historyToDhallConfigTemplateInputs gitLogOutput `shouldBe` Right expected
+  it "3" $ do
+    let gitLogOutput = [s|
+1406873814;User1 user
+1537187208;srghma
+1573325887;srghma
+|]
+    let expected :: NonEmpty DhallConfigTemplateInput =
+          [
+            (DhallConfigTemplateInput "User1 user" "2014")
+          , (DhallConfigTemplateInput "srghma" "2018-2019")
+          ]
+    historyToDhallConfigTemplateInputs gitLogOutput `shouldBe` Right expected

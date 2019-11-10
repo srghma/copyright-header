@@ -13,6 +13,12 @@ import qualified Data.List                     as List
 import Control.Monad.Fail
 import qualified Text.Read (readEither)
 
+import Data.List
+import Data.Ord
+import Data.Function (on)
+
+import qualified Data.Map
+
 import Language.Haskell.TH.Quote
 import Language.Haskell.TH.Syntax
 import Language.Haskell.TH
@@ -55,13 +61,18 @@ deleteN !i (a:as)
 findIndex :: (a -> Bool) -> NonEmpty a -> Maybe Int
 findIndex predicate nonempty = List.findIndex predicate (toList nonempty)
 
-mygroup :: Eq b => (a -> b) -> [a] -> [(b, [a])]
-mygroup _ [] = []
-mygroup getFieldF (x:xs) = (field, x:xsEqToField) : mygroup getFieldF xs
-  where
-    field = getFieldF x
+-- https://stackoverflow.com/questions/15514486/haskell-converting-a-list-of-a-b-key-value-pairs-with-possibly-repeated-key
+convertKVList :: Ord a => [(a, b)] -> [(a, [b])]
+convertKVList = Data.Map.toList . Data.Map.fromListWith (++) . fmap (second (:[]))
 
-    (xsEqToField, xsNotEqToField) = List.span (\a -> getFieldF a == field) xs
+-- TODO: wrong
+-- groupByAndExtract :: Eq b => (a -> b) -> [a] -> [(b, [a])]
+-- groupByAndExtract _ [] = []
+-- groupByAndExtract getFieldF (x:xs) = (field, x:xsEqToField) : groupByAndExtract getFieldF xs
+--   where
+--     field = getFieldF x
+
+--     (xsEqToField, xsNotEqToField) = List.span (\a -> getFieldF a == field) xs
 
 deriving instance Lift a => Lift (NonEmpty a)
 
