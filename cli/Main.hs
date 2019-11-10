@@ -120,6 +120,7 @@ main = do
           let template = templateFn (NonEmpty.toList inputs)
 
           -- TODO: http://hackage.haskell.org/package/parsec-3.1.14.0/docs/Text-Parsec-Char.html#v:alphaNum
+          -- http://book.realworldhaskell.org/read/using-parsec.html
           let firstFiveWordsFromText :: [Text] = undefined
           let firstFiveWordsFromTemplate :: [Text] = undefined
 
