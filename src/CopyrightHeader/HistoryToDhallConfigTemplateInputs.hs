@@ -19,7 +19,7 @@ import Data.Time.Clock.POSIX(posixSecondsToUTCTime)
 import Protolude
 import Data.String
 import CopyrightHeader.Types
-import CopyrightHeader
+import CopyrightHeader.Utils
 
 historyToDhallConfigTemplateInputs :: Text -> Either Text (NonEmpty DhallConfigTemplateInput)
 historyToDhallConfigTemplateInputs history = do
@@ -35,7 +35,7 @@ historyToDhallConfigTemplateInputs history = do
       history__ &
       fmap extractNameAndYear &
       sequence &
-      (second $
+      second
         (\(x :: NonEmpty (Text, Integer)) ->
           x &
           Data.List.NonEmpty.toList &
@@ -43,27 +43,23 @@ historyToDhallConfigTemplateInputs history = do
           fmap (\(name, years) -> DhallConfigTemplateInput name (yearToStr years)) &
           Data.List.NonEmpty.fromList
         )
-      )
 
-
+yearToStr :: [Integer] -> Text
+yearToStr years = year
   where
-    yearToStr :: [Integer] -> Text
-    yearToStr years = year
-      where
-        min_ :: Integer = Data.List.minimum years
-        max_ :: Integer = Data.List.maximum years
-        year = if min_ == max_ then show min_ else show min_ <> "-" <> show max_
+    min_ :: Integer = Data.List.minimum years
+    max_ :: Integer = Data.List.maximum years
+    year = if min_ == max_ then show min_ else show min_ <> "-" <> show max_
 
-    extractNameAndYear :: [Text] -> Either Text (Text, Integer)
-    extractNameAndYear [fst, snd] = do
-      timestamp :: Int <- first toS $ Text.Read.readEither (toS fst)
-      let name = snd
-      let day :: Day = unixEpochInSecondsToDay timestamp
-      let (year, _month, _day) = toGregorian day
-      return $ (name, year)
-    extractNameAndYear other = throwError $ "Should return 2 elements, but received " <> show other
+extractNameAndYear :: [Text] -> Either Text (Text, Integer)
+extractNameAndYear [timestamp, name] = do
+  timestamp' :: Int <- first toS $ Text.Read.readEither (toS timestamp)
+  let day :: Day = unixEpochInSecondsToDay timestamp'
+  let (year, _month, _day) = toGregorian day
+  return (name, year)
+extractNameAndYear other = throwError $ "Should return 2 elements, but received " <> show other
 
-    -- https://stackoverflow.com/questions/44905138/how-to-convert-epoch-to-gregorian-datetime-in-haskell/49782238
-    -- https://two-wrongs.com/haskell-time-library-tutorial
-    unixEpochInSecondsToDay :: Int -> Day
-    unixEpochInSecondsToDay = utctDay . posixSecondsToUTCTime . fromIntegral
+-- https://stackoverflow.com/questions/44905138/how-to-convert-epoch-to-gregorian-datetime-in-haskell/49782238
+-- https://two-wrongs.com/haskell-time-library-tutorial
+unixEpochInSecondsToDay :: Int -> Day
+unixEpochInSecondsToDay = utctDay . posixSecondsToUTCTime . fromIntegral

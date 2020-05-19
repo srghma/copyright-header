@@ -1,10 +1,10 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.32.0.
+-- This file has been generated from package.yaml by hpack version 0.33.0.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: b0401809979e53041780559d67e78cae59465955f59ba221741c993f14d52c91
+-- hash: 9ff1a0b12e81d350e43a2e321592883933312490d932001f519bc808ca893ad7
 
 name:           copyright-header
 version:        0.1.0.0
@@ -28,10 +28,13 @@ library
   exposed-modules:
       CopyrightHeader
   other-modules:
+      CopyrightHeader.Comment
+      CopyrightHeader.FileContentToSplittedFileContent
       CopyrightHeader.HistoryToDhallConfigTemplateInputs
       CopyrightHeader.Language
       CopyrightHeader.LanguageTypes
       CopyrightHeader.Types
+      CopyrightHeader.Utils
       Paths_copyright_header
   hs-source-dirs:
       src
@@ -69,10 +72,13 @@ executable copyright-header
   main-is: Main.hs
   other-modules:
       CopyrightHeader
+      CopyrightHeader.Comment
+      CopyrightHeader.FileContentToSplittedFileContent
       CopyrightHeader.HistoryToDhallConfigTemplateInputs
       CopyrightHeader.Language
       CopyrightHeader.LanguageTypes
       CopyrightHeader.Types
+      CopyrightHeader.Utils
       Paths_copyright_header
   hs-source-dirs:
       cli
@@ -111,12 +117,16 @@ test-suite spec
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      FileContentToSplittedFileContentSpec
       HistoryToInputsSpec
       CopyrightHeader
+      CopyrightHeader.Comment
+      CopyrightHeader.FileContentToSplittedFileContent
       CopyrightHeader.HistoryToDhallConfigTemplateInputs
       CopyrightHeader.Language
       CopyrightHeader.LanguageTypes
       CopyrightHeader.Types
+      CopyrightHeader.Utils
       Main
       Paths_copyright_header
   hs-source-dirs:

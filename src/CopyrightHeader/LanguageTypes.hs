@@ -126,10 +126,10 @@ data Language
   | Unknown
   deriving (Show, Data, Eq, Ord)
 
-type SingleComment = BS.ByteString
+type SingleComment = Text
 type SingleComments = [SingleComment]
 
-type MultiComment = (BS.ByteString, BS.ByteString)
+type MultiComment = (Text, Text)
 type MultiComments = [MultiComment]
 
 data Comment = Comment
@@ -137,6 +137,3 @@ data Comment = Comment
   , multi :: MultiComments
   }
   deriving (Show, Eq)
-
-type Line = BS.ByteString
-type Lines = [Line]

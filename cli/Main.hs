@@ -31,7 +31,10 @@ import System.FilePath.GlobPattern
 import CopyrightHeader.LanguageTypes
 import CopyrightHeader.Language
 import CopyrightHeader.Types
+import CopyrightHeader.Utils
+import CopyrightHeader.Comment
 import CopyrightHeader.HistoryToDhallConfigTemplateInputs
+import CopyrightHeader.FileContentToSplittedFileContent
 
 data ConfigOptions = ConfigOptions
   { configFilePath :: FilePath.FilePath
@@ -84,7 +87,8 @@ main = do
   (gitTrackedFiles :: [FilePath.FilePath]) <- fmap (fmap toS . Text.splitOn "\n") . Turtle.strict $ Turtle.inproc "git" ["ls-files"] empty
 
   dhallConfig :: DhallConfig <- Dhall.input Dhall.auto (toS configFilePathAbsolute)
-  let templateFn = template dhallConfig
+  let templateFn :: [DhallConfigTemplateInput] -> [Text] = template dhallConfig
+  let templateWithoutNames :: Text = templateFn [] & Text.concat
   let excludePatterns :: [GlobPattern] = exclude dhallConfig
   let includePatterns :: [GlobPattern] = include dhallConfig
 
@@ -108,41 +112,31 @@ main = do
   when (unknownFilePaths /= []) (Turtle.die $ "Unknown file extensions " <> show unknownFilePaths)
 
   -- TODO: https://hackage.haskell.org/package/pipes-text-0.0.2.5/docs/Pipes-Text-IO.html
-  forM_ gitTrackedFilePathsWithComment (\(filePath, comment) -> do
-    history :: Text <- Turtle.strict $ Turtle.inproc "git" ["log", "--encoding=utf-8", "--full-history", "--reverse", "--format=format:%at;%an", toS filePath] empty
+  forM_ gitTrackedFilePathsWithComment (\(filePath, commentStyle) -> do
+    (history :: Text) <- Turtle.strict $ Turtle.inproc "git" ["log", "--encoding=utf-8", "--full-history", "--reverse", "--format=format:%at;%an", toS filePath] empty
 
-    case historyToDhallConfigTemplateInputs history of
-      Left errorMessage -> putStrLn $ "Error for " <> filePath <> ": " <> show errorMessage
-      Right inputs ->
-        withFile filePath ReadWriteMode (\handle -> do
-          text <- Text.hGetContents handle
+    inputs <- historyToDhallConfigTemplateInputs history
+      & either (\errorMessage -> Turtle.die $ "Error for " <> toS filePath <> ": " <> show errorMessage) pure
 
-          let template = templateFn (NonEmpty.toList inputs)
+    (fileContent :: Text) <- Text.readFile filePath
 
-          -- TODO: http://hackage.haskell.org/package/parsec-3.1.14.0/docs/Text-Parsec-Char.html#v:alphaNum
-          -- http://book.realworldhaskell.org/read/using-parsec.html
-          let firstFiveWordsFromText :: [Text] = undefined
-          let firstFiveWordsFromTemplate :: [Text] = undefined
+    (SplittedContent { before, copyright, after }) <- fileContentToSplittedFileContent templateWithoutNames fileContent
+      & either (\errorMessage -> Turtle.die $ "Error for " <> toS filePath <> ": " <> show errorMessage) pure
 
-          let textAlreadyContainsCopyright = firstFiveWordsFromText == firstFiveWordsFromTemplate
-          let textWithoutExistingTemplate = if textAlreadyContainsCopyright then removeFirstParagraph text else text
+    newCopyright :: [Text] <- templateFn (NonEmpty.toList inputs)
+        & wrapLines 80
+        & comment commentStyle
+        & either (\errorMessage -> Turtle.die $ "Error for " <> toS filePath <> ": " <> show errorMessage) pure -- TODO: should not happen actually
 
-          let template_ = wrapInComment comment . wrapLastLine $ template
+    -- putText (show $ Text.unlines newCopyright)
 
-          let newText = template_ <> "\n\n" <> textWithoutExistingTemplate
+    let unlinesWithoutNewlineOnEnd = Text.intercalate "\n"
 
-          putStrLn (toS newText :: String)
-          -- Text.hPutStr handle newText
-          return ()
-        )
+    let newContent :: Text = maybe (unparagraphs [unlinesWithoutNewlineOnEnd newCopyright, after]) (\before' -> unparagraphs [before', unlinesWithoutNewlineOnEnd newCopyright, after]) before
+
+    case copyright of
+      Just _ -> putStrLn $ filePath <> ": copyright was updated"
+      Nothing -> putStrLn $ filePath <> ": copyright was added"
+
+    Text.writeFile filePath newContent
     )
-
-  -- let templateCompiled = template dhallConfig [Input "asdf" "2018-2019", Input "qweqwe" "2013"]
-
-  -- putStrLn (toS templateCompiled :: String)
-  return ()
-  where
-    wrapInComment = undefined
-    wrapLastLine = undefined
-    splitFirstParagraph = undefined
-    removeFirstParagraph = undefined

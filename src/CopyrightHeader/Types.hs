@@ -14,15 +14,14 @@ data DhallConfigTemplateInput = DhallConfigTemplateInput
   {
     name :: Text
   , year :: Text
-  }
-  deriving stock (Generic, Show, Eq)
+  } deriving stock (Generic, Show, Eq)
 
 instance FromDhall DhallConfigTemplateInput
 instance ToDhall DhallConfigTemplateInput
 
 data DhallConfig = DhallConfig
   {
-    template :: [DhallConfigTemplateInput] -> Text
+    template :: [DhallConfigTemplateInput] -> [Text]
   , exclude :: [GlobPattern]
   , include :: [GlobPattern]
   } deriving stock (Generic)
