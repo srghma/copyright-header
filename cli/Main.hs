@@ -6,35 +6,29 @@ import           Protolude                                                      
     , try
     )
 
-import qualified Data.Aeson                                                              as Aeson
-import qualified Data.ByteString.Lazy.Char8                                              as BS
 import qualified Data.List                                                               as List
 import qualified Data.List.NonEmpty                                                               as NonEmpty
-import           Data.String
 import qualified Data.Text as Text
 import qualified Data.Text.IO as Text
-import           "prettyprinter" Data.Text.Prettyprint.Doc
-    ( (<+>)
-    )
-import qualified "prettyprinter" Data.Text.Prettyprint.Doc                               as PP
 import qualified System.Directory                                                        as Directory
 import qualified System.FilePath                                                         as FilePath
-import qualified Data.Generics.Product as GLens
-import qualified Control.Lens as Lens
 import Options.Applicative
-import Data.Semigroup ((<>))
 import qualified Dhall
 import qualified Turtle
-import Dhall (FromDhall, ToDhall, Natural)
 import System.FilePath.GlobPattern
+import qualified Data.Text.ANSI as ANSI
 
-import CopyrightHeader.LanguageTypes
-import CopyrightHeader.Language
-import CopyrightHeader.Types
-import CopyrightHeader.Utils
-import CopyrightHeader.Comment
-import CopyrightHeader.HistoryToDhallConfigTemplateInputs
-import CopyrightHeader.FileContentToSplittedFileContent
+import           CopyrightHeader.LanguageTypes
+import           CopyrightHeader.Types
+import qualified CopyrightHeader.Language      as CopyrightHeader.Language
+import qualified CopyrightHeader.Utils         as CopyrightHeader.Utils
+import qualified CopyrightHeader.Comment       as CopyrightHeader.Comment
+import qualified CopyrightHeader.HistoryToDhallConfigContributors
+                                               as CopyrightHeader.HistoryToDhallConfigContributors
+import qualified CopyrightHeader.FileContentToSplittedFileContent
+                                               as CopyrightHeader.FileContentToSplittedFileContent
+import           CopyrightHeader.FileContentToSplittedFileContent
+                                                ( SplittedContent(..) )
 
 data ConfigOptions = ConfigOptions
   { configFilePath :: FilePath.FilePath
@@ -66,7 +60,10 @@ opts = info (configOptionsParser <**> helper)
  <> header "copyright-header" )
 
 fileComment :: FilePath.FilePath -> Comment
-fileComment = getCommentStyle . getLangFromExt . FilePath.takeExtension
+fileComment =
+  CopyrightHeader.Language.getCommentStyle
+    . CopyrightHeader.Language.getLangFromExt
+    . FilePath.takeExtension
 
 -- TODO: http://hackage.haskell.org/package/pipes-async-0.1.3/docs/Pipes-Async.html
 main :: IO ()
@@ -76,25 +73,22 @@ main = do
   let configFilePath_ = configFilePath config
   configFilePathAbsolute <- Directory.makeAbsolute configFilePath_
   configFilePathExists <- Directory.doesFileExist configFilePathAbsolute
-  unless configFilePathExists (die $ "File " <> toS configFilePathAbsolute <> " does not exists")
+  unless configFilePathExists (Turtle.die $ "File " <> toS configFilePathAbsolute <> " does not exists")
 
   let rootDirectoryPath_ = rootDirectoryPath config
   rootDirectoryPathAbsolute <- Directory.makeAbsolute rootDirectoryPath_
   rootDirectoryPathExists <- Directory.doesDirectoryExist rootDirectoryPathAbsolute
-  unless rootDirectoryPathExists (die $ "Directory " <> toS rootDirectoryPathAbsolute <> " does not exists")
+  unless rootDirectoryPathExists (Turtle.die $ "Directory " <> toS rootDirectoryPathAbsolute <> " does not exists")
 
   -- TODO: may fail, NonEmpty.fromList Raises an error if given an empty list
   (gitTrackedFiles :: [FilePath.FilePath]) <- fmap (fmap toS . Text.splitOn "\n") . Turtle.strict $ Turtle.inproc "git" ["ls-files"] empty
 
   dhallConfig :: DhallConfig <- Dhall.input Dhall.auto (toS configFilePathAbsolute)
-  let templateFn :: [DhallConfigTemplateInput] -> [Text] = template dhallConfig
-  let templateWithoutNames :: Text = templateFn [] & Text.concat
-  let excludePatterns :: [GlobPattern] = exclude dhallConfig
-  let includePatterns :: [GlobPattern] = include dhallConfig
-
-  -- putStrLn (show excludePatterns :: String)
-
-  -- putStrLn (show gitTrackedFiles :: String)
+  let templateFn :: [DhallConfigContributor] -> [Text] = CopyrightHeader.Types.template dhallConfig
+  let templateWithoutNames :: Text                     = templateFn [] & Text.concat
+  let excludePatterns :: [GlobPattern]                 = CopyrightHeader.Types.exclude dhallConfig
+  let includePatterns :: [GlobPattern]                 = CopyrightHeader.Types.include dhallConfig
+  let emailToContributorName :: Map Email Name         = CopyrightHeader.Types.emailToContributorName dhallConfig
 
   let gitTrackedFiles_ :: [FilePath.FilePath] = do
         file <- gitTrackedFiles
@@ -102,8 +96,6 @@ main = do
         guard $ any (file ~~) includePatterns
         guard $ all (file /~) excludePatterns
         return file
-
-  -- putStrLn (show gitTrackedFiles_ :: String)
 
   let gitTrackedFilePathsWithComment :: [(FilePath.FilePath, Comment)] = fmap (\f -> (f, fileComment f)) gitTrackedFiles_
 
@@ -113,30 +105,34 @@ main = do
 
   -- TODO: https://hackage.haskell.org/package/pipes-text-0.0.2.5/docs/Pipes-Text-IO.html
   forM_ gitTrackedFilePathsWithComment (\(filePath, commentStyle) -> do
-    (history :: Text) <- Turtle.strict $ Turtle.inproc "git" ["log", "--encoding=utf-8", "--full-history", "--reverse", "--format=format:%at;%an", toS filePath] empty
+    (history :: Text) <- Turtle.strict $ Turtle.inproc "git" ["log", "--encoding=utf-8", "--full-history", "--reverse", "--format=format:%at;%aE", toS filePath] empty
 
-    inputs <- historyToDhallConfigTemplateInputs history
-      & either (\errorMessage -> Turtle.die $ "Error for " <> toS filePath <> ": " <> show errorMessage) pure
+    case CopyrightHeader.HistoryToDhallConfigContributors.historyToDhallConfigContributors emailToContributorName history of
+      Left (CopyrightHeader.HistoryToDhallConfigContributors.UnknownContributorsError emails) -> putStrLn $ toS filePath <> ": " <> ANSI.red "Unknown emails" <> show emails
+      Left (CopyrightHeader.HistoryToDhallConfigContributors.UnexpectedError errorMessage) -> Turtle.die $ "Error for " <> toS filePath <> ": " <> show errorMessage
+      Right inputs -> do
+        (fileContent :: Text) <- Text.readFile filePath
 
-    (fileContent :: Text) <- Text.readFile filePath
+        SplittedContent { before, copyright, after } <- CopyrightHeader.FileContentToSplittedFileContent.fileContentToSplittedFileContent templateWithoutNames fileContent
+          & either (\errorMessage -> Turtle.die $ "Error for " <> toS filePath <> ": " <> show errorMessage) pure
 
-    (SplittedContent { before, copyright, after }) <- fileContentToSplittedFileContent templateWithoutNames fileContent
-      & either (\errorMessage -> Turtle.die $ "Error for " <> toS filePath <> ": " <> show errorMessage) pure
+        newCopyright :: [Text] <- templateFn (NonEmpty.toList inputs)
+            & CopyrightHeader.Utils.wrapLines 100
+            & CopyrightHeader.Comment.comment commentStyle
+            & map (map Text.strip)
+            & either (\errorMessage -> Turtle.die $ "Error for " <> toS filePath <> ": " <> show errorMessage) pure -- TODO: should not happen actually
 
-    newCopyright :: [Text] <- templateFn (NonEmpty.toList inputs)
-        & wrapLines 80
-        & comment commentStyle
-        & either (\errorMessage -> Turtle.die $ "Error for " <> toS filePath <> ": " <> show errorMessage) pure -- TODO: should not happen actually
+        let newContent :: Text = maybe
+                  (CopyrightHeader.Utils.unparagraphs [CopyrightHeader.Utils.unlinesWithoutNewlineOnEnd newCopyright, after])
+                  (\before' -> CopyrightHeader.Utils.unparagraphs [before', CopyrightHeader.Utils.unlinesWithoutNewlineOnEnd newCopyright, after])
+                  before
 
-    -- putText (show $ Text.unlines newCopyright)
+        if fileContent == newContent
+           then putStrLn $ toS filePath <> ": " <> ANSI.green "copyright is up to date"
+           else do
+            case copyright of
+              Just _ -> putStrLn $ toS filePath <> ": " <> ANSI.yellow "copyright was updated"
+              Nothing -> putStrLn $ toS filePath <> ": " <> ANSI.yellow "copyright was added"
 
-    let unlinesWithoutNewlineOnEnd = Text.intercalate "\n"
-
-    let newContent :: Text = maybe (unparagraphs [unlinesWithoutNewlineOnEnd newCopyright, after]) (\before' -> unparagraphs [before', unlinesWithoutNewlineOnEnd newCopyright, after]) before
-
-    case copyright of
-      Just _ -> putStrLn $ filePath <> ": copyright was updated"
-      Nothing -> putStrLn $ filePath <> ": copyright was added"
-
-    Text.writeFile filePath newContent
+            Text.writeFile filePath newContent
     )

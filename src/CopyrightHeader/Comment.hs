@@ -2,9 +2,7 @@ module CopyrightHeader.Comment where
 
 import Protolude
 
-import qualified Data.Text as Text
 import CopyrightHeader.LanguageTypes
-import CopyrightHeader.Language
 
 -- single line comment style is preferred
 comment :: Comment -> [Text] -> Either Text [Text]

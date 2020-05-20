@@ -4,15 +4,15 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 9ff1a0b12e81d350e43a2e321592883933312490d932001f519bc808ca893ad7
+-- hash: 7748b1658e9918bea9d767e328a6ccecd90cac3ac3b2c3fc6a1f48c889a458b1
 
 name:           copyright-header
 version:        0.1.0.0
 description:    Please see the README on GitHub at <https://github.com/srghma/copyright-header#readme>
 homepage:       https://github.com/srghma/copyright-header#readme
 bug-reports:    https://github.com/srghma/copyright-header/issues
-author:         Sergey Homa <srghma@gmail.com>
-maintainer:     Sergey Homa <srghma@gmail.com>
+author:         Serhii Khoma <srghma@gmail.com>
+maintainer:     Serhii Khoma <srghma@gmail.com>
 license:        Apache-2.0
 license-file:   LICENSE
 build-type:     Simple
@@ -30,7 +30,7 @@ library
   other-modules:
       CopyrightHeader.Comment
       CopyrightHeader.FileContentToSplittedFileContent
-      CopyrightHeader.HistoryToDhallConfigTemplateInputs
+      CopyrightHeader.HistoryToDhallConfigContributors
       CopyrightHeader.Language
       CopyrightHeader.LanguageTypes
       CopyrightHeader.Types
@@ -53,8 +53,10 @@ library
     , generic-arbitrary
     , generic-lens
     , lens
+    , list-singleton
     , mtl
     , neat-interpolation
+    , newtype-generics
     , optparse-applicative
     , prettyprinter
     , protolude
@@ -63,6 +65,7 @@ library
     , tabular
     , template-haskell
     , text
+    , text-ansi
     , time
     , transformers
     , turtle
@@ -74,7 +77,7 @@ executable copyright-header
       CopyrightHeader
       CopyrightHeader.Comment
       CopyrightHeader.FileContentToSplittedFileContent
-      CopyrightHeader.HistoryToDhallConfigTemplateInputs
+      CopyrightHeader.HistoryToDhallConfigContributors
       CopyrightHeader.Language
       CopyrightHeader.LanguageTypes
       CopyrightHeader.Types
@@ -98,8 +101,10 @@ executable copyright-header
     , generic-arbitrary
     , generic-lens
     , lens
+    , list-singleton
     , mtl
     , neat-interpolation
+    , newtype-generics
     , optparse-applicative
     , prettyprinter
     , protolude
@@ -108,6 +113,7 @@ executable copyright-header
     , tabular
     , template-haskell
     , text
+    , text-ansi
     , time
     , transformers
     , turtle
@@ -122,7 +128,7 @@ test-suite spec
       CopyrightHeader
       CopyrightHeader.Comment
       CopyrightHeader.FileContentToSplittedFileContent
-      CopyrightHeader.HistoryToDhallConfigTemplateInputs
+      CopyrightHeader.HistoryToDhallConfigContributors
       CopyrightHeader.Language
       CopyrightHeader.LanguageTypes
       CopyrightHeader.Types
@@ -152,8 +158,10 @@ test-suite spec
     , generic-lens
     , hspec ==2.*
     , lens
+    , list-singleton
     , mtl
     , neat-interpolation
+    , newtype-generics
     , optparse-applicative
     , prettyprinter
     , protolude
@@ -163,6 +171,7 @@ test-suite spec
     , tabular
     , template-haskell
     , text
+    , text-ansi
     , time
     , transformers
     , turtle

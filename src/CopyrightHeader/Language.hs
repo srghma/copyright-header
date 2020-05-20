@@ -129,16 +129,22 @@ getLangFromExt ext
     _of = elem ext'
     _is = (==) ext'
 
+noComment :: Comment
 noComment = Comment [] []
 
+cStyle :: Comment
 cStyle = Comment ["//"] [("/*", "*/")]
 
+htmlStyle :: Comment
 htmlStyle = Comment [] [("<!--", "-->")]
 
+mlStyle :: Comment
 mlStyle = Comment [] [("(*", "*)")]
 
+prologStyle :: Comment
 prologStyle = Comment [] [("/*", "*/")]
 
+shStyle :: Comment
 shStyle = Comment ["#"] []
 
 getCommentStyle :: Language -> Comment

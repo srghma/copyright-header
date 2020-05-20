@@ -2,7 +2,7 @@ name:    copyright-header
 version: 0.1.0.0
 github:  "srghma/copyright-header"
 license: Apache-2.0
-author:  Sergey Homa <srghma@gmail.com>
+author:  Serhii Khoma <srghma@gmail.com>
 
 extra-source-files:
   - README.md
@@ -88,6 +88,9 @@ dependencies:
   - filemanip
   - string-qq
   - time
+  - text-ansi
+  - newtype-generics
+  - list-singleton
 
 library:
   source-dirs: src

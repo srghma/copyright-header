@@ -6,47 +6,50 @@ import           Protolude
 
 import           Test.Hspec
 
-import qualified Data.Text as Text
+import qualified Data.Map as Map
 import Data.Text (Text)
 import Data.String.QQ
 
-import           CopyrightHeader.HistoryToDhallConfigTemplateInputs
+import           CopyrightHeader.HistoryToDhallConfigContributors
 import           CopyrightHeader.Types
+
+emailToContributorNameMap :: Map Email Name
+emailToContributorNameMap = Map.fromList
+  [ (Email "user1@mail.com", Name "User 1")
+  , (Email "srghma@mail.com", Name "Serhii Khoma")
+  ]
 
 spec :: Spec
 spec = do
-  it "1" $ do
+  it "two diff users" $ do
     let gitLogOutput :: Text = [s|
-1406873814;User1 user
-1537187208;srghma
+1406873814;user1@mail.com
+1537187208;srghma@mail.com
 |]
-    let expected :: NonEmpty DhallConfigTemplateInput =
-          [
-            (DhallConfigTemplateInput "User1 user" "2014")
-          , (DhallConfigTemplateInput "srghma" "2018")
+    let expected :: NonEmpty DhallConfigContributor =
+          [ (DhallConfigContributor { yearSpan = (YearSpan "2018"), name = (Name "Serhii Khoma") })
+          , (DhallConfigContributor { yearSpan = YearSpan "2014", name = Name "User 1"})
           ]
-    historyToDhallConfigTemplateInputs gitLogOutput `shouldBe` Right expected
-  it "2" $ do
+    historyToDhallConfigContributors emailToContributorNameMap gitLogOutput `shouldBe` Right expected
+  it "one user in same year" $ do
     let gitLogOutput = [s|
-1406873814;User1 user
-1406873815;User1 user
-1537187208;srghma
+1406873814;user1@mail.com
+1406873815;user1@mail.com
+1537187208;srghma@mail.com
 |]
-    let expected :: NonEmpty DhallConfigTemplateInput =
-          [
-            (DhallConfigTemplateInput "User1 user" "2014")
-          , (DhallConfigTemplateInput "srghma" "2018")
+    let expected :: NonEmpty DhallConfigContributor =
+          [ (DhallConfigContributor { yearSpan = (YearSpan "2018"), name = (Name "Serhii Khoma") })
+          , (DhallConfigContributor { yearSpan = (YearSpan "2014"), name = (Name "User 1") })
           ]
-    historyToDhallConfigTemplateInputs gitLogOutput `shouldBe` Right expected
-  it "3" $ do
+    historyToDhallConfigContributors emailToContributorNameMap gitLogOutput `shouldBe` Right expected
+  it "one user in year-span" $ do
     let gitLogOutput = [s|
-1406873814;User1 user
-1537187208;srghma
-1573325887;srghma
+1406873814;user1@mail.com
+1537187208;srghma@mail.com
+1573325887;srghma@mail.com
 |]
-    let expected :: NonEmpty DhallConfigTemplateInput =
-          [
-            (DhallConfigTemplateInput "User1 user" "2014")
-          , (DhallConfigTemplateInput "srghma" "2018-2019")
+    let expected :: NonEmpty DhallConfigContributor =
+          [ (DhallConfigContributor { yearSpan = (YearSpan "2018-2019"), name = (Name "Serhii Khoma") })
+          , (DhallConfigContributor { yearSpan = (YearSpan "2014"), name = (Name "User 1") })
           ]
-    historyToDhallConfigTemplateInputs gitLogOutput `shouldBe` Right expected
+    historyToDhallConfigContributors emailToContributorNameMap gitLogOutput `shouldBe` Right expected

@@ -7,7 +7,6 @@ module CopyrightHeader.LanguageTypes where
 import Protolude
 
 import Data.Data
-import Data.ByteString as BS
 
 data Language
   = ActionScript

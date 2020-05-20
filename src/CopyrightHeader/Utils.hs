@@ -63,10 +63,6 @@ deleteN !i (a:as)
 findIndex :: (a -> Bool) -> NonEmpty a -> Maybe Int
 findIndex predicate nonempty = List.findIndex predicate (toList nonempty)
 
--- https://stackoverflow.com/questions/15514486/haskell-converting-a-list-of-a-b-key-value-pairs-with-possibly-repeated-key
-convertKVList :: Ord a => [(a, b)] -> [(a, [b])]
-convertKVList = Data.Map.toList . Data.Map.fromListWith (++) . fmap (second (:[]))
-
 -- TODO: wrong
 -- groupByAndExtract :: Eq b => (a -> b) -> [a] -> [(b, [a])]
 -- groupByAndExtract _ [] = []
@@ -109,8 +105,14 @@ unparagraphs = Text.intercalate "\n\n"
 
 wrapLines :: Int -> [Text] -> [Text]
 wrapLines maxLineWidth lines =
-  map Prettyprint.pretty lines
-  & Prettyprint.vcat
+  map perLine lines
+  & Prettyprint.vsep
   & Prettyprint.layoutPretty (Prettyprint.LayoutOptions { layoutPageWidth = Prettyprint.AvailablePerLine maxLineWidth 1.0 })
   & Prettyprint.renderStrict
   & Text.lines
+    where
+      perLine :: Text -> Prettyprint.Doc ann
+      perLine line = line & Text.words & map Prettyprint.pretty & Prettyprint.fillSep
+
+unlinesWithoutNewlineOnEnd :: [Text] -> Text
+unlinesWithoutNewlineOnEnd = Text.intercalate "\n"
