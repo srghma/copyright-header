@@ -1,10 +1,11 @@
-Copyright header adder, that:
+# Copyright header adder, that:
+
 1. finds existing copyright header paragraph (separated by two newlines "\n\n") by first 5 words of EXPECTED copyright header (e.g. ["©", "copyright", "by", "YOUR", "COMPANY"] here)
 2. removes existing
 3. adds updated
 4. writes new file content if it is chagned
 
-Example config
+# Example config
 
 ```dhall
 let Contributor
@@ -45,3 +46,7 @@ in
     }
   }
 ```
+
+# TODO
+
+handle block comments with newline inside
