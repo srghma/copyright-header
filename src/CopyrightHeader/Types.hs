@@ -6,29 +6,29 @@ import System.FilePath.GlobPattern
 import Protolude
 import Control.Newtype.Generics
 
-newtype Name = Name Text deriving stock (Generic, Ord, Eq, Show)
+newtype Name = Name Text
+  deriving stock (Generic, Ord, Eq, Show)
+  deriving newtype (ToDhall, FromDhall)
 
 instance Newtype Name
-instance FromDhall Name
-instance ToDhall Name
 
-newtype Email = Email Text deriving stock (Generic, Ord, Eq, Show)
+newtype Email = Email Text
+  deriving stock (Generic, Ord, Eq, Show)
+  deriving newtype (ToDhall, FromDhall)
 
 instance Newtype Email
-instance FromDhall Email
-instance ToDhall Email
 
-newtype Year = Year Integer deriving stock (Generic, Ord, Eq, Show)
+newtype Year = Year Integer
+  deriving stock (Generic, Ord, Eq, Show)
+  deriving newtype (ToDhall, FromDhall)
 
 instance Newtype Year
-instance FromDhall Year
-instance ToDhall Year
 
-newtype YearSpan = YearSpan Text deriving stock (Generic, Ord, Eq, Show)
+newtype YearSpan = YearSpan Text
+  deriving stock (Generic, Ord, Eq, Show)
+  deriving newtype (ToDhall, FromDhall)
 
 instance Newtype YearSpan
-instance FromDhall YearSpan
-instance ToDhall YearSpan
 
 data DhallConfigContributor = DhallConfigContributor
   { name :: Name
@@ -42,7 +42,7 @@ data DhallConfig = DhallConfig
   { template :: [DhallConfigContributor] -> [Text]
   , exclude :: [GlobPattern]
   , include :: [GlobPattern]
-  , emailToContributorName :: Map Email Name
+  , emailToContributorName :: Map Email (Maybe Name)
   } deriving stock (Generic)
 
 instance FromDhall DhallConfig

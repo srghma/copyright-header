@@ -25,7 +25,7 @@ data HistoryToDhallConfigContributorsError
   | UnexpectedError Text
   deriving stock (Generic, Ord, Eq, Show)
 
-historyToDhallConfigContributors :: Map Email Name -> Text -> Either HistoryToDhallConfigContributorsError (NonEmpty DhallConfigContributor)
+historyToDhallConfigContributors :: Map Email (Maybe Name) -> Text -> Either HistoryToDhallConfigContributorsError (NonEmpty DhallConfigContributor)
 historyToDhallConfigContributors emailToContributorName history = do
   let history' :: [[Text]] =
         history
@@ -37,30 +37,40 @@ historyToDhallConfigContributors emailToContributorName history = do
 
   (history''' :: NonEmpty GitHistoryRow) <- traverse toGitHistoryRow history'' & first UnexpectedError
 
-  let history_map :: Map Email YearSpan =
+  let history_map :: Map Email [Year] =
         history'''
         & NonEmpty.toList
         & fmap (\GitHistoryRow { email, year } -> (email, year))
         & convertKVList
-        & fmap yearsToYearSpan
 
   let
-    emailToName :: Email -> Either (NonEmpty Email) Name
+    emailToName :: Email -> Either (NonEmpty Email) (Maybe Name)
     emailToName email = Map.lookup email emailToContributorName & note (NonEmpty.singleton email)
 
-  let history_map' :: Either (NonEmpty Email) [(Name, YearSpan)] =
+  let constributors :: Either (NonEmpty Email) [(Maybe Name, [Year])] =
         history_map
         & Map.toList
         & fmap (first emailToName)
-        & traverse (\(errorOrName, yearSpan) -> either Left (\name -> Right (name, yearSpan)) errorOrName)
+        & map (\(errorOrName, years) -> either Left (\name -> Right (name, years)) errorOrName)
+        & collectErrors
 
-  (history_map'' :: NonEmpty (Name, YearSpan)) <-
-        history_map'
+  (constributors' :: [(Maybe Name, [Year])]) <-
+        constributors
         & first UnknownContributorsError
-        & map nonEmpty
-        >>= note (UnexpectedError "Expected git history to contain at least 1 row after processing")
 
-  Right (history_map'' <&> (\(name, yearSpan) -> DhallConfigContributor { name, yearSpan }))
+  let contributors'' :: Map Name [Year] =
+        constributors'
+        & map (\(maybeName, years) -> maybeName >>= \name -> Just (name, years))
+        & catMaybes
+        & Map.fromListWith (++)
+
+  (contributors''' :: NonEmpty (Name, [Year])) <-
+        contributors''
+        & Map.toList
+        & nonEmpty
+        & note (UnexpectedError "Expected git history to contain at least 1 row after processing")
+
+  Right (contributors''' <&> (\(name, years) -> DhallConfigContributor { name, yearSpan = yearsToYearSpan years }))
 
 yearsToYearSpan :: [Year] -> YearSpan
 yearsToYearSpan years = year
@@ -92,3 +102,14 @@ convertKVList = Map.fromListWith (++) . fmap (second (:[]))
 --   let
 --     rows' :: [(Name, ([Email], [Year]))] = fmap (\(GitHistoryRow name email year) -> (name, ([email], [year]))) rows
 --   in Map.fromListWith (\(e1, y1) (e2, y2) -> (e1 <> e2, y1 <> y2)) rows'
+
+
+collectErrors :: Semigroup errors => [Either errors a] -> Either errors [a]
+collectErrors [] = Right []
+collectErrors (Left errors : xs) = Left $ go errors xs
+  where
+    go :: Semigroup errors => errors -> [Either errors a] -> errors
+    go accum ((Right _):xs') = go accum xs'
+    go accum ((Left errors'):xs') = go (accum <> errors') xs'
+    go accum [] = accum
+collectErrors ((Right i):xs) = fmap (i :) (collectErrors xs)

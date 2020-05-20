@@ -13,22 +13,24 @@ import Data.String.QQ
 import           CopyrightHeader.HistoryToDhallConfigContributors
 import           CopyrightHeader.Types
 
-emailToContributorNameMap :: Map Email Name
+emailToContributorNameMap :: Map Email (Maybe Name)
 emailToContributorNameMap = Map.fromList
-  [ (Email "user1@mail.com", Name "User 1")
-  , (Email "srghma@mail.com", Name "Serhii Khoma")
+  [ (Email "user1@mail.com", Just (Name "User 1"))
+  , (Email "srghma@mail.com", Just (Name "Serhii Khoma"))
+  , (Email "robot@mail.com", Nothing)
   ]
 
 spec :: Spec
 spec = do
-  it "two diff users" $ do
+  it "different users" $ do
     let gitLogOutput :: Text = [s|
 1406873814;user1@mail.com
 1537187208;srghma@mail.com
+1537187208;robot@mail.com
 |]
     let expected :: NonEmpty DhallConfigContributor =
           [ (DhallConfigContributor { yearSpan = (YearSpan "2018"), name = (Name "Serhii Khoma") })
-          , (DhallConfigContributor { yearSpan = YearSpan "2014", name = Name "User 1"})
+          , (DhallConfigContributor { yearSpan = YearSpan "2014", name = (Name "User 1") })
           ]
     historyToDhallConfigContributors emailToContributorNameMap gitLogOutput `shouldBe` Right expected
   it "one user in same year" $ do

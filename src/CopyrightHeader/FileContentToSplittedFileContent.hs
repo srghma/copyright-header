@@ -37,7 +37,7 @@ fileContentToSplittedFileContent templateWithoutNames fileContent =
           (headParagraphs, copyright : tail) ->
             Right $ SplittedContent
             { before = if null headParagraphs then Nothing else Just $ unparagraphs headParagraphs
-            , copyright = Just $ copyright
+            , copyright = Just copyright
             , after = unparagraphs tail
             }
           _ -> Left "Expected to find copyright paragraph"

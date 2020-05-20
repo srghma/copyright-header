@@ -17,6 +17,7 @@ import qualified Dhall
 import qualified Turtle
 import System.FilePath.GlobPattern
 import qualified Data.Text.ANSI as ANSI
+import qualified Control.Newtype.Generics as Newtype
 
 import           CopyrightHeader.LanguageTypes
 import           CopyrightHeader.Types
@@ -88,7 +89,7 @@ main = do
   let templateWithoutNames :: Text                     = templateFn [] & Text.concat
   let excludePatterns :: [GlobPattern]                 = CopyrightHeader.Types.exclude dhallConfig
   let includePatterns :: [GlobPattern]                 = CopyrightHeader.Types.include dhallConfig
-  let emailToContributorName :: Map Email Name         = CopyrightHeader.Types.emailToContributorName dhallConfig
+  let emailToContributorName :: Map Email (Maybe Name) = CopyrightHeader.Types.emailToContributorName dhallConfig
 
   let gitTrackedFiles_ :: [FilePath.FilePath] = do
         file <- gitTrackedFiles
@@ -108,7 +109,12 @@ main = do
     (history :: Text) <- Turtle.strict $ Turtle.inproc "git" ["log", "--encoding=utf-8", "--full-history", "--reverse", "--format=format:%at;%aE", toS filePath] empty
 
     case CopyrightHeader.HistoryToDhallConfigContributors.historyToDhallConfigContributors emailToContributorName history of
-      Left (CopyrightHeader.HistoryToDhallConfigContributors.UnknownContributorsError emails) -> putStrLn $ toS filePath <> ": " <> ANSI.red "Unknown emails" <> show emails
+      Left (CopyrightHeader.HistoryToDhallConfigContributors.UnknownContributorsError emails) ->
+        let
+          printedEmails = emails
+            & NonEmpty.toList
+            & map (\x -> "  " <> Newtype.unpack x) & Text.intercalate "\n"
+         in putStrLn $ toS filePath <> ": " <> ANSI.red ("Unknown emails:\n" <> printedEmails)
       Left (CopyrightHeader.HistoryToDhallConfigContributors.UnexpectedError errorMessage) -> Turtle.die $ "Error for " <> toS filePath <> ": " <> show errorMessage
       Right inputs -> do
         (fileContent :: Text) <- Text.readFile filePath

@@ -6,11 +6,9 @@ import           Protolude
 
 import           Test.Hspec
 
-import qualified Data.Text as Text
 import Data.Text (Text)
 import Data.String.QQ
 
-import           CopyrightHeader.Types
 import           CopyrightHeader.FileContentToSplittedFileContent
 
 -- templateWithoutNames :: Text
