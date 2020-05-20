@@ -123,6 +123,7 @@ getLangFromExt ext
   | _is "zig" = Zig
   | _is "zsh" = Zsh
   | _is "hx" = Haxe
+  | _is "slim" = Slim
   | otherwise = Unknown
   where
     ext' = drop 1 ext
@@ -186,6 +187,7 @@ getCommentStyle lang
   | _is Isabelle = Comment ["--"] [("{*", "*}"), ("(*", "*)"), ("‹", "›"), ("\\<open>", "\\<close>")]
   | _is Razor = Comment [] [("<!--", "-->"), ("@*", "*@")]
   | _is Pascal = Comment ["//", "(*"] [("{", "}")]
+  | _is Slim = Comment ["/"] []
   | _of [Protobuf, Zig] = Comment ["//"] []
   | _of [Erlang, Tex] = Comment ["%"] []
   | _of [Text, Markdown, Json, IntelHex, Hex, ReStructuredText] = noComment

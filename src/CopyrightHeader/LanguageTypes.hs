@@ -122,6 +122,7 @@ data Language
   | Zig
   | Zsh
   | Haxe
+  | Slim
   | Unknown
   deriving (Show, Data, Eq, Ord)
 
