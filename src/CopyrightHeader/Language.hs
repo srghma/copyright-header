@@ -194,7 +194,8 @@ getCommentStyle lang
   | _of [Haskell, Idris, Agda, PureScript, Elm] = Comment ["--"] [("{-", "-}")]
   | _of [Oz, Prolog] = prologStyle
   | _of [Coq, Sml, Wolfram, OCaml] = mlStyle
-  | _of [Html, Polly, RubyHtml, XML] = htmlStyle
+  | _of [Html, Polly, XML] = htmlStyle
+  | _of [RubyHtml] = Comment [] [("<%#", "%>")]
   | _of [BourneShell, Make, Awk, CShell, Gherkin, Makefile, Nim, R, SaltStack, Tcl, Toml, Yaml, Zsh, Elixir] = shStyle
   | _of
      [ AmbientTalk
